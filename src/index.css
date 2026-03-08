@@ -1,0 +1,120 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@layer base {
+  :root {
+    --background: 30 25% 97%;
+    --foreground: 20 20% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 20 20% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 20 20% 15%;
+
+    --primary: 12 85% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 40 95% 55%;
+    --secondary-foreground: 20 20% 15%;
+
+    --muted: 30 15% 92%;
+    --muted-foreground: 20 10% 45%;
+
+    --accent: 12 70% 95%;
+    --accent-foreground: 12 85% 40%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 30 15% 88%;
+    --input: 30 15% 88%;
+    --ring: 12 85% 50%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 20 20% 12%;
+    --sidebar-foreground: 30 15% 92%;
+    --sidebar-primary: 12 85% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 20 15% 18%;
+    --sidebar-accent-foreground: 30 15% 92%;
+    --sidebar-border: 20 12% 22%;
+    --sidebar-ring: 12 85% 50%;
+
+    --success: 142 70% 45%;
+    --success-foreground: 0 0% 100%;
+    --warning: 40 95% 55%;
+    --warning-foreground: 20 20% 15%;
+    --info: 210 80% 55%;
+    --info-foreground: 0 0% 100%;
+
+    --font-heading: 'Fredoka', sans-serif;
+    --font-body: 'Inter', sans-serif;
+  }
+
+  .dark {
+    --background: 20 20% 8%;
+    --foreground: 30 15% 92%;
+    --card: 20 18% 12%;
+    --card-foreground: 30 15% 92%;
+    --popover: 20 18% 12%;
+    --popover-foreground: 30 15% 92%;
+    --primary: 12 85% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 40 95% 55%;
+    --secondary-foreground: 20 20% 15%;
+    --muted: 20 12% 18%;
+    --muted-foreground: 30 10% 55%;
+    --accent: 12 40% 18%;
+    --accent-foreground: 12 85% 65%;
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 20 12% 22%;
+    --input: 20 12% 22%;
+    --ring: 12 85% 50%;
+    --sidebar-background: 20 20% 6%;
+    --sidebar-foreground: 30 15% 92%;
+    --sidebar-primary: 12 85% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 20 15% 12%;
+    --sidebar-accent-foreground: 30 15% 92%;
+    --sidebar-border: 20 12% 15%;
+    --sidebar-ring: 12 85% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-body);
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+  }
+}
+
+@layer components {
+  .btn-hero {
+    @apply bg-primary text-primary-foreground px-8 py-3 rounded-full font-semibold text-lg shadow-lg transition-all duration-300;
+  }
+  .btn-hero:hover {
+    @apply shadow-xl scale-105;
+    background: hsl(12 85% 45%);
+  }
+  .card-product {
+    @apply bg-card rounded-2xl shadow-md overflow-hidden transition-all duration-300;
+  }
+  .card-product:hover {
+    @apply shadow-xl -translate-y-1;
+  }
+  .badge-status {
+    @apply px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide;
+  }
+}
