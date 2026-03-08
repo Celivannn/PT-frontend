@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, Minus, Plus, ImageOff } from 'lucide-react';
+import { ShoppingCart, Minus, Plus } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
 import { toast } from 'sonner';
@@ -12,7 +12,7 @@ interface Product {
   name: string;
   description: string;
   price: string;
-  image?: string;
+  image?: string | null;
   is_available: boolean;
   category_name?: string;
   stock_quantity?: number;
@@ -21,7 +21,7 @@ interface Product {
 
 interface ProductCardProps {
   product: Product;
-  viewMode?: 'grid' | 'list';  // Made optional with default 'grid'
+  viewMode?: 'grid' | 'list';
 }
 
 export default function ProductCard({ product, viewMode = 'grid' }: ProductCardProps) {
@@ -75,19 +75,38 @@ export default function ProductCard({ product, viewMode = 'grid' }: ProductCardP
   };
 
   const getImageUrl = () => {
+    // If image error or no image, show placeholder
     if (imageError || !product.image) {
       return 'https://via.placeholder.com/300x200?text=No+Image';
     }
-    
-    if (product.image.startsWith('http')) {
-      return product.image;
+
+    let imagePath = product.image;
+
+    // If it's already a full URL, use it as is
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      return imagePath;
     }
+
+    // Clean up the path - remove any double slashes except for the protocol
+    imagePath = imagePath.replace(/^\/+/, ''); // Remove leading slashes
     
-    if (product.image.startsWith('/media/')) {
-      return `${API_URL}${product.image}`;
+    // Construct the full URL
+    // Common Django media URL patterns:
+    // - /media/product/image.jpg
+    // - media/product/image.jpg
+    // - product/image.jpg
+    if (imagePath.startsWith('media/')) {
+      return `${API_URL}/${imagePath}`;
+    } else if (imagePath.startsWith('/media/')) {
+      return `${API_URL}${imagePath}`;
+    } else {
+      return `${API_URL}/media/${imagePath}`;
     }
-    
-    return `${API_URL}/media/${product.image}`;
+  };
+
+  const handleImageError = () => {
+    console.log('Image failed to load for product:', product.name, 'URL:', getImageUrl());
+    setImageError(true);
   };
 
   const formatPrice = (price: string): string => {
@@ -121,7 +140,7 @@ export default function ProductCard({ product, viewMode = 'grid' }: ProductCardP
                   src={getImageUrl()} 
                   alt={product.name}
                   className="w-full h-full object-cover"
-                  onError={() => setImageError(true)}
+                  onError={handleImageError}
                 />
               </div>
               
@@ -204,7 +223,7 @@ export default function ProductCard({ product, viewMode = 'grid' }: ProductCardP
               src={getImageUrl()} 
               alt={product.name}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              onError={() => setImageError(true)}
+              onError={handleImageError}
             />
           </div>
           
