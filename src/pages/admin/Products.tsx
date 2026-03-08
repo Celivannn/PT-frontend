@@ -179,6 +179,11 @@ const AdminProducts = () => {
       return;
     }
 
+    if (!form.category) {
+      toast.error('Please select a category');
+      return;
+    }
+
     setSaving(true);
     try {
       const formData = new FormData();
@@ -195,6 +200,12 @@ const AdminProducts = () => {
         formData.append('image', selectedImage);
       }
 
+      // Log FormData contents for debugging
+      console.log('Sending product data:');
+      for (let [key, value] of formData.entries()) {
+        console.log(key, value);
+      }
+
       if (editingProduct) {
         await adminAPI.updateProduct(editingProduct.id, formData);
         toast.success('Product updated successfully');
@@ -207,7 +218,10 @@ const AdminProducts = () => {
       fetchData();
     } catch (error: any) {
       console.error('Error saving product:', error);
-      toast.error(error.response?.data?.message || 'Failed to save product');
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error || 
+                          'Failed to save product';
+      toast.error(errorMessage);
     } finally {
       setSaving(false);
     }
@@ -223,7 +237,10 @@ const AdminProducts = () => {
       fetchData();
     } catch (error: any) {
       console.error('Error deleting product:', error);
-      toast.error(error.response?.data?.message || 'Failed to delete product');
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error || 
+                          'Failed to delete product';
+      toast.error(errorMessage);
     } finally {
       setDeleting(null);
     }
@@ -238,7 +255,8 @@ const AdminProducts = () => {
   const getImageUrl = (imagePath: string | null) => {
     if (!imagePath) return null;
     if (imagePath.startsWith('http')) return imagePath;
-    return `${API_URL}${imagePath}`;
+    if (imagePath.startsWith('/media/')) return `${API_URL}${imagePath}`;
+    return `${API_URL}/media/${imagePath}`;
   };
 
   const formatCurrency = (price: string) => {
@@ -252,7 +270,7 @@ const AdminProducts = () => {
           <h1 className="text-3xl font-heading font-bold">Products</h1>
           <p className="text-sm text-muted-foreground mt-1">Manage your product inventory</p>
         </div>
-        <Button onClick={openNew}>
+        <Button onClick={openNew} className="bg-red-600 hover:bg-red-700 text-white">
           <Plus className="h-4 w-4 mr-2" /> Add Product
         </Button>
       </div>
@@ -260,7 +278,7 @@ const AdminProducts = () => {
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input 
             placeholder="Search products..." 
             value={search} 
@@ -283,14 +301,14 @@ const AdminProducts = () => {
 
       {loading ? (
         <div className="flex justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <Loader2 className="h-8 w-8 animate-spin text-red-600" />
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filteredProducts.map((product) => (
             <Card key={product.id} className="p-4 hover:shadow-lg transition-shadow animate-fade-in">
               {/* Product Image */}
-              <div className="aspect-square rounded-lg bg-muted overflow-hidden mb-3">
+              <div className="aspect-square rounded-lg bg-gray-100 overflow-hidden mb-3">
                 {product.image ? (
                   <img 
                     src={getImageUrl(product.image) || ''} 
@@ -299,7 +317,9 @@ const AdminProducts = () => {
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       target.style.display = 'none';
-                      target.parentElement!.innerHTML = '<div class="w-full h-full flex items-center justify-center text-4xl">🍔</div>';
+                      if (target.parentElement) {
+                        target.parentElement.innerHTML = '<div class="w-full h-full flex items-center justify-center text-4xl">🍔</div>';
+                      }
                     }}
                   />
                 ) : (
@@ -312,20 +332,20 @@ const AdminProducts = () => {
               {/* Product Info */}
               <div>
                 <h3 className="font-semibold truncate">{product.name}</h3>
-                <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+                <p className="text-sm text-gray-500 line-clamp-2 mt-1">
                   {product.description}
                 </p>
                 
                 <div className="flex items-center justify-between mt-3">
-                  <span className="font-bold text-primary text-lg">
+                  <span className="font-bold text-red-600 text-lg">
                     {formatCurrency(product.price)}
                   </span>
-                  <Badge variant="outline" className="bg-muted">
+                  <Badge variant="outline" className="bg-gray-100">
                     {product.category_name}
                   </Badge>
                 </div>
 
-                <div className="flex items-center gap-3 mt-2 text-xs">
+                <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
                   <span className="flex items-center gap-1">
                     <Package className="h-3 w-3" />
                     Stock: {product.stock_quantity}
@@ -338,13 +358,13 @@ const AdminProducts = () => {
 
                 <div className="flex items-center justify-between mt-3">
                   <div className="flex items-center gap-2">
-                    <span className={`h-2 w-2 rounded-full ${product.is_available ? 'bg-success' : 'bg-destructive'}`} />
-                    <span className="text-xs text-muted-foreground">
+                    <span className={`h-2 w-2 rounded-full ${product.is_available ? 'bg-green-500' : 'bg-red-500'}`} />
+                    <span className="text-xs text-gray-500">
                       {product.is_available ? 'Available' : 'Unavailable'}
                     </span>
                   </div>
                   {product.is_featured && (
-                    <Badge className="bg-warning text-warning-foreground text-xs">
+                    <Badge className="bg-yellow-500 text-white text-xs">
                       <TrendingUp className="h-3 w-3 mr-1" /> Featured
                     </Badge>
                   )}
@@ -356,7 +376,7 @@ const AdminProducts = () => {
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="flex-1"
+                  className="flex-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                   onClick={() => openEdit(product)}
                 >
                   <Pencil className="h-4 w-4 mr-2" /> Edit
@@ -364,7 +384,7 @@ const AdminProducts = () => {
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="flex-1 text-destructive hover:text-destructive"
+                  className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50"
                   onClick={() => handleDelete(product.id)}
                   disabled={deleting === product.id}
                 >
@@ -380,10 +400,10 @@ const AdminProducts = () => {
           ))}
 
           {filteredProducts.length === 0 && (
-            <div className="col-span-full text-center py-16 bg-muted/50 rounded-lg">
-              <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">No products found</p>
-              <Button onClick={openNew} variant="outline" className="mt-4">
+            <div className="col-span-full text-center py-16 bg-gray-50 rounded-lg">
+              <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-500">No products found</p>
+              <Button onClick={openNew} variant="outline" className="mt-4 border-red-600 text-red-600 hover:bg-red-50">
                 <Plus className="h-4 w-4 mr-2" /> Add your first product
               </Button>
             </div>
@@ -411,7 +431,7 @@ const AdminProducts = () => {
             <div className="space-y-2">
               <Label>Product Image</Label>
               <div className="flex items-start gap-4">
-                <div className="w-20 h-20 rounded-lg border-2 border-dashed border-border overflow-hidden flex-shrink-0">
+                <div className="w-20 h-20 rounded-lg border-2 border-dashed border-gray-300 overflow-hidden flex-shrink-0">
                   {imagePreview ? (
                     <img 
                       src={imagePreview} 
@@ -420,7 +440,7 @@ const AdminProducts = () => {
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                      <ImageIcon className="h-8 w-8 text-gray-300" />
                     </div>
                   )}
                 </div>
@@ -439,7 +459,7 @@ const AdminProducts = () => {
                       size="sm"
                       onClick={() => fileInputRef.current?.click()}
                       disabled={saving}
-                      className="flex-1"
+                      className="flex-1 border-red-600 text-red-600 hover:bg-red-50"
                     >
                       <Upload className="h-3 w-3 mr-2" />
                       {imagePreview ? 'Change' : 'Upload'}
@@ -451,13 +471,13 @@ const AdminProducts = () => {
                         size="sm"
                         onClick={handleRemoveImage}
                         disabled={saving}
-                        className="text-destructive"
+                        className="text-red-600 border-red-600 hover:bg-red-50"
                       >
                         <X className="h-3 w-3" />
                       </Button>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-gray-400">
                     Max 5MB. JPG, PNG, GIF
                   </p>
                 </div>
@@ -465,26 +485,26 @@ const AdminProducts = () => {
             </div>
 
             {/* Name */}
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="name">Name *</Label>
               <Input
                 id="name"
                 value={form.name}
                 onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                className="mt-1"
+                className="mt-1 focus-visible:ring-red-500"
                 placeholder="e.g., Classic Burger"
                 disabled={saving}
               />
             </div>
 
             {/* Description */}
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
               <Textarea
                 id="description"
                 value={form.description}
                 onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                className="mt-1"
+                className="mt-1 focus-visible:ring-red-500"
                 placeholder="Product description..."
                 rows={3}
                 disabled={saving}
@@ -493,7 +513,7 @@ const AdminProducts = () => {
 
             {/* Price and Category */}
             <div className="grid grid-cols-2 gap-3">
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="price">Price (₱) *</Label>
                 <Input
                   id="price"
@@ -502,19 +522,19 @@ const AdminProducts = () => {
                   min="0"
                   value={form.price}
                   onChange={e => setForm(f => ({ ...f, price: e.target.value }))}
-                  className="mt-1"
+                  className="mt-1 focus-visible:ring-red-500"
                   placeholder="0.00"
                   disabled={saving}
                 />
               </div>
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="category">Category *</Label>
                 <Select 
                   value={form.category} 
                   onValueChange={v => setForm(f => ({ ...f, category: v }))}
                   disabled={saving || categories.length === 0}
                 >
-                  <SelectTrigger className="mt-1">
+                  <SelectTrigger className="mt-1 focus-visible:ring-red-500">
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent>
@@ -528,7 +548,7 @@ const AdminProducts = () => {
 
             {/* Stock and Prep Time */}
             <div className="grid grid-cols-2 gap-3">
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="stock">Stock Quantity</Label>
                 <Input
                   id="stock"
@@ -536,11 +556,11 @@ const AdminProducts = () => {
                   min="0"
                   value={form.stock_quantity}
                   onChange={e => setForm(f => ({ ...f, stock_quantity: e.target.value }))}
-                  className="mt-1"
+                  className="mt-1 focus-visible:ring-red-500"
                   disabled={saving}
                 />
               </div>
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="prepTime">Prep Time (min)</Label>
                 <Input
                   id="prepTime"
@@ -548,7 +568,7 @@ const AdminProducts = () => {
                   min="1"
                   value={form.preparation_time}
                   onChange={e => setForm(f => ({ ...f, preparation_time: e.target.value }))}
-                  className="mt-1"
+                  className="mt-1 focus-visible:ring-red-500"
                   disabled={saving}
                 />
               </div>
@@ -563,6 +583,7 @@ const AdminProducts = () => {
                   checked={form.is_available}
                   onCheckedChange={v => setForm(f => ({ ...f, is_available: v }))}
                   disabled={saving}
+                  className="data-[state=checked]:bg-red-600"
                 />
               </div>
               <div className="flex items-center justify-between">
@@ -572,6 +593,7 @@ const AdminProducts = () => {
                   checked={form.is_featured}
                   onCheckedChange={v => setForm(f => ({ ...f, is_featured: v }))}
                   disabled={saving}
+                  className="data-[state=checked]:bg-red-600"
                 />
               </div>
             </div>
@@ -580,7 +602,7 @@ const AdminProducts = () => {
             <div className="flex gap-2 pt-2">
               <Button
                 variant="outline"
-                className="flex-1"
+                className="flex-1 border-gray-300"
                 onClick={() => setDialogOpen(false)}
                 disabled={saving}
               >
@@ -588,11 +610,11 @@ const AdminProducts = () => {
               </Button>
               <Button
                 onClick={handleSave}
-                className="flex-1"
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white"
                 disabled={saving}
               >
                 {saving ? (
-                  <span className="flex items-center gap-2">
+                  <span className="flex items-center justify-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     {editingProduct ? 'Updating...' : 'Creating...'}
                   </span>

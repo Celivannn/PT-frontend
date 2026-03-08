@@ -47,6 +47,8 @@ export const authAPI = {
   login: (data: { username: string; password: string }) =>
     api.post('/auth/login/', data),
   getProfile: () => api.get('/auth/profile/'),
+  updateProfile: (data: { first_name?: string; last_name?: string; email?: string; phone?: string }) =>
+    api.put('/auth/profile/', data),
 };
 
 // Products
@@ -81,24 +83,38 @@ export const adminAPI = {
   updateOrder: (orderNumber: string, data: { status?: string; payment_status?: string }) =>
     api.put(`/admin/orders/${orderNumber}/`, data),
   
-  // Products
-  createProduct: (data: FormData | object) => api.post('/admin/products/create/', data),
-  updateProduct: (id: number, data: object) => api.put(`/admin/products/update/${id}/`, data),
+  // Products - FIXED: Added proper headers for FormData
+  createProduct: (data: FormData) => api.post('/admin/products/create/', data, {
+    headers: { 
+      'Content-Type': 'multipart/form-data'
+    }
+  }),
+  updateProduct: (id: number, data: FormData) => api.put(`/admin/products/update/${id}/`, data, {
+    headers: { 
+      'Content-Type': 'multipart/form-data'
+    }
+  }),
   deleteProduct: (id: number) => api.delete(`/admin/products/delete/${id}/`),
   
-  // Categories - ADD THESE MISSING METHODS
-  createCategory: (data: { name: string; description: string; is_active: boolean }) =>
-    api.post('/admin/categories/create/', data),
-  
-  updateCategory: (id: number, data: { name: string; description: string; is_active: boolean }) =>
-    api.put(`/admin/categories/update/${id}/`, data),
-  
-  deleteCategory: (id: number) =>
-    api.delete(`/admin/categories/delete/${id}/`),
+  // Categories - FIXED: These should also handle FormData for image uploads
+  createCategory: (data: FormData) => api.post('/admin/categories/create/', data, {
+    headers: { 
+      'Content-Type': 'multipart/form-data'
+    }
+  }),
+  updateCategory: (id: number, data: FormData) => api.put(`/admin/categories/update/${id}/`, data, {
+    headers: { 
+      'Content-Type': 'multipart/form-data'
+    }
+  }),
+  deleteCategory: (id: number) => api.delete(`/admin/categories/delete/${id}/`),
   
   // Analytics
   getAnalytics: (params?: { period?: string; from?: string; to?: string }) =>
     api.get('/admin/analytics/', { params }),
+  
+  // Users (Admin only)
+  getUsers: () => api.get('/admin/users/'),
 };
 
 export default api;

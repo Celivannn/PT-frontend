@@ -13,6 +13,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  isAuthenticated: boolean;  // Added this property
   login: (username: string, password: string) => Promise<User>;
   register: (data: { username: string; email: string; password: string; first_name: string; last_name: string }) => Promise<void>;
   logout: () => void;
@@ -24,15 +25,19 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false); // Added state
 
   useEffect(() => {
     const token = localStorage.getItem('access_token');
     const savedUser = localStorage.getItem('user');
     if (token && savedUser) {
       try {
-        setUser(JSON.parse(savedUser));
+        const parsedUser = JSON.parse(savedUser);
+        setUser(parsedUser);
+        setIsAuthenticated(true); // Set authenticated when user exists
       } catch {
         localStorage.clear();
+        setIsAuthenticated(false);
       }
     }
     setLoading(false);
@@ -44,6 +49,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('refresh_token', data.refresh);
     localStorage.setItem('user', JSON.stringify(data.user));
     setUser(data.user);
+    setIsAuthenticated(true); // Set authenticated on successful login
     return data.user;
   };
 
@@ -53,6 +59,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('refresh_token', data.refresh);
     localStorage.setItem('user', JSON.stringify(data.user));
     setUser(data.user);
+    setIsAuthenticated(true); // Set authenticated on successful registration
   };
 
   const logout = () => {
@@ -60,10 +67,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('user');
     setUser(null);
+    setIsAuthenticated(false); // Set authenticated to false on logout
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, isAdmin: !!user?.is_staff }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      loading, 
+      isAuthenticated, // Include in provider value
+      login, 
+      register, 
+      logout, 
+      isAdmin: !!user?.is_staff 
+    }}>
       {children}
     </AuthContext.Provider>
   );

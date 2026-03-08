@@ -135,21 +135,30 @@ const AdminCategories = () => {
 
     setSaving(true);
     try {
+      // Create FormData to send both text fields and image
+      const formData = new FormData();
+      formData.append('name', form.name);
+      formData.append('description', form.description);
+      formData.append('is_active', String(form.is_active));
+      
+      // Append image if selected
+      if (selectedImage) {
+        formData.append('image', selectedImage);
+      }
+
+      // Log FormData contents for debugging
+      console.log('Sending category data:');
+      for (let [key, value] of formData.entries()) {
+        console.log(key, value);
+      }
+
       if (editingCategory) {
-        // Update existing category - using regular object, not FormData
-        await adminAPI.updateCategory(editingCategory.id, {
-          name: form.name,
-          description: form.description,
-          is_active: form.is_active
-        });
+        // Update existing category with FormData
+        await adminAPI.updateCategory(editingCategory.id, formData);
         toast.success('Category updated successfully');
       } else {
-        // Create new category - using regular object, not FormData
-        await adminAPI.createCategory({
-          name: form.name,
-          description: form.description,
-          is_active: form.is_active
-        });
+        // Create new category with FormData
+        await adminAPI.createCategory(formData);
         toast.success('Category created successfully');
       }
       
@@ -200,7 +209,8 @@ const AdminCategories = () => {
   const getImageUrl = (imagePath: string | null) => {
     if (!imagePath) return null;
     if (imagePath.startsWith('http')) return imagePath;
-    return `${API_URL}${imagePath}`;
+    if (imagePath.startsWith('/media/')) return `${API_URL}${imagePath}`;
+    return `${API_URL}/media/${imagePath}`;
   };
 
   const formatDate = (dateString?: string) => {
@@ -219,7 +229,7 @@ const AdminCategories = () => {
           <h1 className="text-3xl font-heading font-bold">Categories</h1>
           <p className="text-sm text-gray-500 mt-1">Manage your product categories</p>
         </div>
-        <Button onClick={handleAddNew} className="gap-2">
+        <Button onClick={handleAddNew} className="bg-red-600 hover:bg-red-700 text-white gap-2">
           <Plus className="h-4 w-4" /> Add Category
         </Button>
       </div>
@@ -243,7 +253,9 @@ const AdminCategories = () => {
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
                         target.style.display = 'none';
-                        target.parentElement!.innerHTML = '<div class="w-full h-full flex items-center justify-center"><FolderOpen class="h-6 w-6 text-gray-400" /></div>';
+                        if (target.parentElement) {
+                          target.parentElement.innerHTML = '<div class="w-full h-full flex items-center justify-center"><FolderOpen class="h-6 w-6 text-gray-400" /></div>';
+                        }
                       }}
                     />
                   ) : (
@@ -322,7 +334,7 @@ const AdminCategories = () => {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-8 w-8 p-0"
+                    className="h-8 w-8 p-0 hover:bg-blue-50"
                     onClick={() => handleEdit(cat)}
                   >
                     <Edit className="h-4 w-4 text-blue-600" />
@@ -330,7 +342,7 @@ const AdminCategories = () => {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-8 w-8 p-0"
+                    className="h-8 w-8 p-0 hover:bg-red-50"
                     onClick={() => handleDelete(cat.id)}
                     disabled={deleting === cat.id}
                   >
@@ -349,7 +361,7 @@ const AdminCategories = () => {
             <div className="col-span-full text-center py-16 bg-gray-50 rounded-lg">
               <FolderOpen className="h-12 w-12 text-gray-300 mx-auto mb-3" />
               <p className="text-gray-500">No categories yet</p>
-              <Button onClick={handleAddNew} variant="outline" className="mt-4">
+              <Button onClick={handleAddNew} variant="outline" className="mt-4 border-red-600 text-red-600 hover:bg-red-50">
                 <Plus className="h-4 w-4 mr-2" /> Create your first category
               </Button>
             </div>
@@ -374,9 +386,9 @@ const AdminCategories = () => {
           </DialogHeader>
           
           <div className="space-y-4 mt-2">
-            {/* Image Upload Section - Note: This is just for preview, actual image upload would need backend support */}
+            {/* Image Upload Section */}
             <div className="space-y-2">
-              <Label>Category Image (Preview Only)</Label>
+              <Label>Category Image</Label>
               <div className="flex items-start gap-4">
                 {/* Image Preview */}
                 <div className="w-20 h-20 rounded-lg border-2 border-dashed border-gray-300 overflow-hidden flex-shrink-0">
@@ -410,7 +422,7 @@ const AdminCategories = () => {
                       size="sm"
                       onClick={() => fileInputRef.current?.click()}
                       disabled={saving}
-                      className="flex-1"
+                      className="flex-1 border-red-600 text-red-600 hover:bg-red-50"
                     >
                       <Upload className="h-3 w-3 mr-2" />
                       {imagePreview ? 'Change Image' : 'Upload Image'}
@@ -423,7 +435,7 @@ const AdminCategories = () => {
                         size="sm"
                         onClick={handleRemoveImage}
                         disabled={saving}
-                        className="text-red-600 hover:text-red-700"
+                        className="text-red-600 border-red-600 hover:bg-red-50"
                       >
                         <X className="h-3 w-3" />
                       </Button>
@@ -431,33 +443,33 @@ const AdminCategories = () => {
                   </div>
                   
                   <p className="text-xs text-gray-500">
-                    Note: Image upload requires backend support. This is just a preview.
+                    Max 5MB. JPG, PNG, GIF
                   </p>
                 </div>
               </div>
             </div>
 
             {/* Name Field */}
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="name">Name *</Label>
               <Input 
                 id="name"
                 value={form.name} 
                 onChange={e => setForm(f => ({ ...f, name: e.target.value }))} 
-                className="mt-1"
+                className="mt-1 focus-visible:ring-red-500"
                 placeholder="e.g., Burgers"
                 disabled={saving}
               />
             </div>
 
             {/* Description Field */}
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
               <Textarea 
                 id="description"
                 value={form.description} 
                 onChange={e => setForm(f => ({ ...f, description: e.target.value }))} 
-                className="mt-1"
+                className="mt-1 focus-visible:ring-red-500"
                 placeholder="Brief description of the category"
                 rows={3}
                 disabled={saving}
@@ -472,6 +484,7 @@ const AdminCategories = () => {
                 checked={form.is_active} 
                 onCheckedChange={v => setForm(f => ({ ...f, is_active: v }))}
                 disabled={saving}
+                className="data-[state=checked]:bg-red-600"
               />
             </div>
 
@@ -479,7 +492,7 @@ const AdminCategories = () => {
             <div className="flex gap-2 pt-2">
               <Button 
                 variant="outline" 
-                className="flex-1"
+                className="flex-1 border-gray-300"
                 onClick={() => {
                   setDialogOpen(false);
                   setEditingCategory(null);
